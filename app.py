@@ -19,33 +19,24 @@ app = onCreate()
 @app.route("/")
 def home():
     with dbOSE as (con, cursor):
-        return server.getAllSpells(con, cursor), 200
+        result, code = server.queryDB(con, cursor, server.queryBuilder())
+        return result, code
 
 
-@app.route("/get-by-id/<spellID>")
-def getSpellByID(spellID):
+@app.route("/get-by/<col>/<val>")
+def getSpellByColumn(col, val):
     with dbOSE as (con, cursor):
-        try:
-            response = server.getSpellByID(con, cursor, spellID)
-            return response, 200
-        except TypeError as e:
-            return e
+        result, code = server.queryDB(con, cursor, server.queryBuilder(col, val))
+        return result, code
 
 
-@app.route("/get-by-name/<name>")
-def getSpellByName(name):
+@app.errorhandler(Exception)
+def handleErrRequest(e):
     with dbOSE as (con, cursor):
-        response = server.getSpellByName(con, cursor, name)
-        return response, 200
-
-
-@app.route("/get-by-level/<level>")
-def getSpellByLevel(level):
-    with dbOSE as (con, cursor):
-        response = server.getSpellByLevel(con, cursor, level)
-        return response, 200
+        response, rCode = server.handleError(con, cursor, e)
+        return response, rCode
 
 
 @app.teardown_appcontext
-def stop_db(exception):
+def stopDB(exception):
     dbOSE.stop(exception)
